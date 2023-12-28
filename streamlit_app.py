@@ -1,40 +1,78 @@
-import altair as alt
-import numpy as np
-import pandas as pd
 import streamlit as st
+import replicate
+import os
 
-"""
-# Welcome to Streamlit!
+# App title
+st.set_page_config(page_title="🦙💬 Codearch.io - Mistral Evaluator")
 
-Edit `/streamlit_app.py` to customize this app to your heart's desire :heart:.
-If you have any questions, checkout our [documentation](https://docs.streamlit.io) and [community
-forums](https://discuss.streamlit.io).
+# Replicate Credentials
+with st.sidebar:
+    st.title('🦙💬 Codearch.io Mistral Evaluator')
+    if 'REPLICATE_API_TOKEN' in st.secrets:
+        st.success('API key already provided!', icon='✅')
+        replicate_api = st.secrets['REPLICATE_API_TOKEN']
+    else:
+        replicate_api = st.text_input('Enter Replicate API token:', type='password')
+        if not (replicate_api.startswith('r8_') and len(replicate_api)==40):
+            st.warning('Please enter your credentials!', icon='⚠️')
+        else:
+            st.success('Proceed to entering your prompt message!', icon='👉')
+    os.environ['REPLICATE_API_TOKEN'] = replicate_api
 
-In the meantime, below is an example of what you can do with just a few lines of code:
-"""
+    st.subheader('Models and parameters')
+    selected_model = st.sidebar.selectbox('Choose a Mistral model', ['mixtral-8x7b-instruct-v0.1'], key='selected_model')
+    max_token = 4096
+    if selected_model == 'mixtral-8x7b-instruct-v0.1':
+        llm = 'mistralai/mixtral-8x7b-instruct-v0.1:7b3212fbaf88310cfef07a061ce94224e82efc8403c26fc67e8f6c065de51f21'
+    top_k = st.sidebar.slider('top_k', min_value=0.01, max_value=1.0, value=0.9, step=0.01)
+    top_p = st.sidebar.slider('top_p', min_value=0.01, max_value=1.0, value=0.9, step=0.01)    
+    temperature = st.sidebar.slider('temperature', min_value=0.01, max_value=5.0, value=0.1, step=0.01)
+    max_new_tokens = st.sidebar.slider('max_new_tokens', min_value=512, max_value=max_token, value=max_token, step=8)
+    # st.markdown('📖 Learn how to build this app in this [blog](https://blog.streamlit.io/how-to-build-a-llama-2-chatbot/)!')
 
-num_points = st.slider("Number of points in spiral", 1, 10000, 1100)
-num_turns = st.slider("Number of turns in spiral", 1, 300, 31)
+# Store LLM generated responses
+if "messages" not in st.session_state.keys():
+    st.session_state.messages = [{"role": "assistant", "content": "How may I assist you today?"}]
 
-indices = np.linspace(0, 1, num_points)
-theta = 2 * np.pi * num_turns * indices
-radius = indices
+# Display or clear chat messages
+for message in st.session_state.messages:
+    with st.chat_message(message["role"]):
+        st.write(message["content"])
 
-x = radius * np.cos(theta)
-y = radius * np.sin(theta)
+def clear_chat_history():
+    st.session_state.messages = [{"role": "assistant", "content": "How may I assist you today?"}]
+st.sidebar.button('Clear Chat History', on_click=clear_chat_history)
 
-df = pd.DataFrame({
-    "x": x,
-    "y": y,
-    "idx": indices,
-    "rand": np.random.randn(num_points),
-})
+def generate_response(prompt_input):
+    string_dialogue = "You are a helpful assistant. You do not respond as 'User' or pretend to be 'User'. You only respond once as 'Assistant'."
+    for dict_message in st.session_state.messages:
+        if dict_message["role"] == "user":
+            string_dialogue += "User: " + dict_message["content"] + "\n\n"
+        else:
+            string_dialogue += "Assistant: " + dict_message["content"] + "\n\n"
+    output = replicate.run(llm, 
+                           input={"prompt": f"{string_dialogue} {prompt_input} Assistant: ",
+                                  "top_k":top_k, "temperature":temperature, "top_p":top_p, 
+                                  "max_new_tokens":max_new_tokens, "prompt_template": "<s>[INST] {prompt} [/INST] ",
+                                  "presence_penalty": 0, "frequency_penalty": 0})
+    return output
 
-st.altair_chart(alt.Chart(df, height=700, width=700)
-    .mark_point(filled=True)
-    .encode(
-        x=alt.X("x", axis=None),
-        y=alt.Y("y", axis=None),
-        color=alt.Color("idx", legend=None, scale=alt.Scale()),
-        size=alt.Size("rand", legend=None, scale=alt.Scale(range=[1, 150])),
-    ))
+# User-provided prompt
+if prompt := st.chat_input(disabled=not replicate_api):
+    st.session_state.messages.append({"role": "user", "content": prompt})
+    with st.chat_message("user"):
+        st.write(prompt)
+
+# Generate a new response if last message is not from assistant
+if st.session_state.messages[-1]["role"] != "assistant":
+    with st.chat_message("assistant"):
+        with st.spinner("Thinking..."):
+            response = generate_response(prompt)
+            placeholder = st.empty()
+            full_response = ''
+            for item in response:
+                full_response += item
+                placeholder.markdown(full_response)
+            placeholder.markdown(full_response)
+    message = {"role": "assistant", "content": full_response}
+    st.session_state.messages.append(message)
