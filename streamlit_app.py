@@ -24,9 +24,9 @@ with st.sidebar:
     max_token = 4096
     if selected_model == 'mixtral-8x7b-instruct-v0.1':
         llm = 'mistralai/mixtral-8x7b-instruct-v0.1:7b3212fbaf88310cfef07a061ce94224e82efc8403c26fc67e8f6c065de51f21'
-    top_k = st.sidebar.slider('top_k', min_value=0.01, max_value=1.0, value=0.9, step=0.01)
+    top_k = st.sidebar.slider('top_k', min_value=0, max_value=100, value=50, step=1)
     top_p = st.sidebar.slider('top_p', min_value=0.01, max_value=1.0, value=0.9, step=0.01)    
-    temperature = st.sidebar.slider('temperature', min_value=0.01, max_value=5.0, value=0.1, step=0.01)
+    temperature = st.sidebar.slider('temperature', min_value=0.01, max_value=5.0, value=0.6, step=0.01)
     max_new_tokens = st.sidebar.slider('max_new_tokens', min_value=512, max_value=max_token, value=max_token, step=8)
     # st.markdown('📖 Learn how to build this app in this [blog](https://blog.streamlit.io/how-to-build-a-llama-2-chatbot/)!')
 
