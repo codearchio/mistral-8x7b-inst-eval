@@ -21,7 +21,7 @@ with st.sidebar:
 
     st.subheader('Models and parameters')
     selected_model = st.sidebar.selectbox('Choose a Mistral model', ['mixtral-8x7b-instruct-v0.1','dolphin-2.2.1-mistral-7b'], key='selected_model')
-    max_token = 4096
+    max_token = 16384
     if selected_model == 'mixtral-8x7b-instruct-v0.1':
         llm = 'mistralai/mixtral-8x7b-instruct-v0.1:7b3212fbaf88310cfef07a061ce94224e82efc8403c26fc67e8f6c065de51f21'
     elif selected_model == 'dolphin-2.2.1-mistral-7b':
