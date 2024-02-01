@@ -23,7 +23,8 @@ with st.sidebar:
     selected_model = st.sidebar.selectbox('Choose a Mistral model', ['mixtral-8x7b-instruct-v0.1','dolphin-2.2.1-mistral-7b'], key='selected_model')
     max_token = 16384
     if selected_model == 'mixtral-8x7b-instruct-v0.1':
-        llm = 'mistralai/mixtral-8x7b-instruct-v0.1:7b3212fbaf88310cfef07a061ce94224e82efc8403c26fc67e8f6c065de51f21'
+        # llm = 'mistralai/mixtral-8x7b-instruct-v0.1:7b3212fbaf88310cfef07a061ce94224e82efc8403c26fc67e8f6c065de51f21'
+        llm = 'mistralai/mixtral-8x7b-instruct-v0.1'
     elif selected_model == 'dolphin-2.2.1-mistral-7b':
         llm = 'lucataco/dolphin-2.2.1-mistral-7b:0521a0090543fea1a687a871870e8f475d6581a3e6e284e32a2579cfb4433ecf'
     top_k = st.sidebar.slider('top_k', min_value=0, max_value=100, value=50, step=1)
