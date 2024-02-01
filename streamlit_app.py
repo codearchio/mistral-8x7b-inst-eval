@@ -19,7 +19,7 @@ with st.sidebar:
             st.success('Proceed to entering your prompt message!', icon='👉')
     os.environ['REPLICATE_API_TOKEN'] = replicate_api
 
-    st.subheader('Models and parameters')
+    st.subheader('Models & parameters')
     selected_model = st.sidebar.selectbox('Choose a Mistral model', ['mixtral-8x7b-instruct-v0.1','dolphin-2.2.1-mistral-7b'], key='selected_model')
     max_token = 16384
     if selected_model == 'mixtral-8x7b-instruct-v0.1':
@@ -34,7 +34,8 @@ with st.sidebar:
 
 # Store LLM generated responses
 if "messages" not in st.session_state.keys():
-    st.session_state.messages = [{"role": "assistant", "content": "How may I assist you today?"}]
+    # st.session_state.messages = [{"role": "assistant", "content": "How may I assist you today?"}]
+    st.session_state.messages = [{}]
 
 # Display or clear chat messages
 for message in st.session_state.messages:
@@ -42,11 +43,13 @@ for message in st.session_state.messages:
         st.write(message["content"])
 
 def clear_chat_history():
-    st.session_state.messages = [{"role": "assistant", "content": "How may I assist you today?"}]
+    # st.session_state.messages = [{"role": "assistant", "content": "How may I assist you today?"}]
+    st.session_state.messages = [{}]
 st.sidebar.button('Clear Chat History', on_click=clear_chat_history)
 
 def generate_response(prompt_input):
-    string_dialogue = "You are a helpful assistant. You do not respond as 'User' or pretend to be 'User'. You only respond once as 'Assistant'."
+    # string_dialogue = "You are a helpful assistant. You do not respond as 'User' or pretend to be 'User'. You only respond once as 'Assistant'."
+    string_dialogue = ""
     for dict_message in st.session_state.messages:
         if dict_message["role"] == "user":
             string_dialogue += "User: " + dict_message["content"] + "\n\n"
