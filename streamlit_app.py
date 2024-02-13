@@ -3,11 +3,11 @@ import replicate
 import os
 
 # App title
-st.set_page_config(page_title="🦙💬 Codearch.io - Mistral Evaluator")
+st.set_page_config(page_title="🦙💬 Deep Insight - LLM Evaluator")
 
 # Replicate Credentials
 with st.sidebar:
-    st.title('🦙💬 Codearch.io Mistral Evaluator')
+    st.title('🦙💬 Deep Insight LLM Evaluator')
     if 'REPLICATE_API_TOKEN' in st.secrets:
         st.success('API key already provided!', icon='✅')
         replicate_api = st.secrets['REPLICATE_API_TOKEN']
@@ -20,7 +20,7 @@ with st.sidebar:
     os.environ['REPLICATE_API_TOKEN'] = replicate_api
 
     st.subheader('Models & parameters')
-    selected_model = st.sidebar.selectbox('Choose a Mistral model', ['deep-insight-8x7b-instruct-v0.1','mixtral-8x7b-instruct-v0.1','dolphin-2.2.1-mistral-7b'], key='selected_model')
+    selected_model = st.sidebar.selectbox('Choose a model', ['deep-insight-8x7b-instruct-v0.1','mixtral-8x7b-instruct-v0.1','dolphin-2.2.1-mistral-7b'], key='selected_model')
     max_token = 16384
     if selected_model == 'deep-insight-8x7b-instruct-v0.1':
         llm = 'mistralai/mixtral-8x7b-instruct-v0.1:7b3212fbaf88310cfef07a061ce94224e82efc8403c26fc67e8f6c065de51f21'
