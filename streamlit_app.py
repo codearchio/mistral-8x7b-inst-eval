@@ -3,9 +3,11 @@ import replicate
 import os
 import boto3
 import json 
+import requests
 
 REPLICATE = "replicate"
 AWS = "AWS"
+TOGETHER = "together"
 
 # newline, bold, unbold = "\n", "\033[1m", "\033[0m"
 os.environ["AWS_DEFAULT_REGION"]='us-east-2'
@@ -39,6 +41,17 @@ def manageSecrets(provider):
                 st.success('Proceed to entering your prompt message!', icon='👉')
         os.environ["AWS_ACCESS_KEY_ID"] = aws_access_key
         os.environ["AWS_SECRET_ACCESS_KEY"] = aws_access_secret
+    elif provider == TOGETHER:
+        if "TOGETHER_API_KEY" in st.secrets:
+            st.success('API TOGETHER_API_KEY already provided!', icon='✅')
+            together_api_key = st.secrets["TOGETHER_API_KEY"]
+        else:
+            together_api_key = st.text_input(f'Enter TOGETHER_API_KEY API token:', type='password')
+            if len(together_api_key)==0:
+                st.warning('Please enter your credentials!', icon='⚠️')
+            else:
+                st.success('Proceed to entering your prompt message!', icon='👉')
+        os.environ["TOGETHER_API_KEY"] = together_api_key
     return True
 
 # Replicate Credentials
@@ -46,15 +59,17 @@ with st.sidebar:
     st.title('🦙💬 Deep Insight LLM Evaluator')
     provider = st.radio(
         "Select provider",
-        ["replicate","AWS"],
-        index=0,
+        [REPLICATE,AWS,TOGETHER],
+        index=2,
     )
     provider_api = manageSecrets(provider)
 
     st.subheader('Models & parameters')
-    selected_model = st.sidebar.selectbox('Choose a model', ['deep-insight-v0.1','mixtral-8x7b-instruct-v0.1','dolphin-2.2.1-mistral-7b','aws-sagemaker-mixtral'], key='selected_model')
+    selected_model = st.sidebar.selectbox('Choose a model', ['together.ai','deep-insight-v0.1','mixtral-8x7b-instruct-v0.1','dolphin-2.2.1-mistral-7b','aws-sagemaker-mixtral'], key='selected_model')
     max_token = 16384
-    if selected_model == 'deep-insight-v0.1':
+    if selected_model == 'together.ai':
+        llm = 'mistralai/Mixtral-8x7B-Instruct-v0.1'
+    elif selected_model == 'deep-insight-v0.1':
         llm = 'mistralai/mixtral-8x7b-instruct-v0.1:7b3212fbaf88310cfef07a061ce94224e82efc8403c26fc67e8f6c065de51f21'
     elif selected_model == 'mixtral-8x7b-instruct-v0.1':
         llm = 'mistralai/mixtral-8x7b-instruct-v0.1'
@@ -64,7 +79,7 @@ with st.sidebar:
         llm = 'jumpstart-dft-hf-llm-mixtral-8x7b-20240214-024901'
     top_k = st.sidebar.slider('top_k', min_value=0, max_value=100, value=50, step=1)
     top_p = st.sidebar.slider('top_p', min_value=0.01, max_value=1.0, value=0.9, step=0.01)    
-    temperature = st.sidebar.slider('temperature', min_value=0.01, max_value=5.0, value=0.6, step=0.01)
+    temperature = st.sidebar.slider('temperature', min_value=0.01, max_value=5.0, value=1.20, step=0.01)
     max_new_tokens = st.sidebar.slider('max_new_tokens', min_value=512, max_value=max_token, value=max_token, step=8)
 
 # Store LLM generated responses
@@ -120,6 +135,31 @@ def generate_aws_response():
     generated_text = model_predictions[0]["generated_text"]
     return generated_text
 
+def generate_together_response():
+    TOGETHER_API_KEY = os.getenv("TOGETHER_API_KEY")
+    url = "https://api.together.xyz/v1/chat/completions"
+        
+    payload = {
+        "model": llm,
+        # "prompt_template": "<s>[INST] {prompt} [/INST] ",
+        "prompt": f'<s>[INST] {prompt} [/INST] ',
+        "max_tokens": 16348,
+        "stop": ["[/INST]","</s>"],
+        "temperature": 1.20,
+        "top_k": 50,
+        "top_p": 0.90
+    }
+    headers = {
+        "accept": "application/json",
+        "content-type": "application/json",
+        "Authorization": "Bearer " + TOGETHER_API_KEY
+    }
+    
+    response = requests.post(url, json=payload, headers=headers)
+    response_json = json.loads(response.text)
+    # print(response_json['usage']['total_tokens'])
+    return response_json['choices'][0]['message']['content']
+
 # User-provided prompt
 if prompt := st.chat_input(disabled=not provider_api):
     st.session_state.messages.append({"role": "user", "content": prompt})
@@ -134,6 +174,8 @@ if st.session_state.messages[-1]["role"] != "assistant":
                 response = generate_response()
             elif provider == AWS:
                 response = generate_aws_response()
+            elif provider == TOGETHER:
+                response = generate_together_response()
             placeholder = st.empty()
             full_response = ''
             for item in response:
