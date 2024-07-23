@@ -65,9 +65,11 @@ with st.sidebar:
     provider_api = manageSecrets(provider)
 
     st.subheader('Models & parameters')
-    selected_model = st.sidebar.selectbox('Choose a model', ['together.ai','deep-insight-v0.1','mixtral-8x7b-instruct-v0.1','dolphin-2.2.1-mistral-7b','aws-sagemaker-mixtral'], key='selected_model')
+    selected_model = st.sidebar.selectbox('Choose a model', ['mistralai/Mixtral-8x22B-Instruct-v0.1','together.ai','deep-insight-v0.1','mixtral-8x7b-instruct-v0.1','dolphin-2.2.1-mistral-7b','aws-sagemaker-mixtral'], key='selected_model')
     max_token = 16384
-    if selected_model == 'together.ai':
+    if selected_model == 'mistralai/Mixtral-8x22B-Instruct-v0.1':
+        llm = 'mistralai/Mixtral-8x22B'
+    elif selected_model == 'together.ai':
         llm = 'mistralai/Mixtral-8x7B-Instruct-v0.1'
     elif selected_model == 'deep-insight-v0.1':
         llm = 'mistralai/mixtral-8x7b-instruct-v0.1:7b3212fbaf88310cfef07a061ce94224e82efc8403c26fc67e8f6c065de51f21'
